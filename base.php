@@ -21,6 +21,8 @@
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
+    session_start();
+
     function connectToOracle() {
         $conn = oci_connect("ora_sidnand", "a76648070", "dbhost.students.cs.ubc.ca:1522/stu");
         if (!$conn) {
