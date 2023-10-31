@@ -26,7 +26,7 @@
     function connect_to_oracle() {
         $conn = oci_connect("ora_sidnand", "a76648070", "dbhost.students.cs.ubc.ca:1522/stu");
         if (!$conn) {
-            $err = OCIError();
+            $err = oci_error();
             $error_message = "Unable to connect to database. Contact admin.";
             return false;
         }
