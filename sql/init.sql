@@ -1,6 +1,6 @@
 CREATE TABLE SupportTeam (
 
-    teamCode INT,
+    teamCode NUMBER,
     country VARCHAR(20) NOT NULL,
     city VARCHAR(20) NOT NULL,
 
@@ -10,7 +10,7 @@ CREATE TABLE SupportTeam (
 
 CREATE TABLE "User" (
 
-    phoneNumber VARCHAR(14),
+    phoneNumber NUMBER,
     firstName VARCHAR(20) NOT NULL,
     lastName VARCHAR(20) NOT NULL,
 
@@ -20,10 +20,10 @@ CREATE TABLE "User" (
 
 CREATE TABLE Admin (
 
-    agentNumber INT,
+    agentNumber NUMBER,
     firstName VARCHAR(20) NOT NULL,
     lastName VARCHAR(20) NOT NULL,
-    worksFor INT NOT NULL,
+    worksFor NUMBER NOT NULL,
 
     PRIMARY KEY (agentNumber),
     FOREIGN KEY (worksFor) REFERENCES SupportTeam(teamCode) ON DELETE CASCADE
@@ -34,8 +34,8 @@ CREATE TABLE Account (
 
     username VARCHAR(20),
     dateCreated DATE NOT NULL,
-    ownersPhoneNumber VARCHAR(14) NOT NULL,
-    adminsNumber INT NOT NULL,
+    ownersPhoneNumber NUMBER NOT NULL,
+    adminsNumber NUMBER NOT NULL,
 
     PRIMARY KEY (username),
     FOREIGN KEY (ownersPhoneNumber) REFERENCES "User"(phoneNumber) ON DELETE CASCADE,
@@ -45,7 +45,7 @@ CREATE TABLE Account (
 
 CREATE TABLE Mailbox (
 
-    mailboxID INT,
+    mailboxID NUMBER,
     ownersUsername VARCHAR(50) NOT NULL,
 
     PRIMARY KEY (mailboxID),
@@ -55,7 +55,7 @@ CREATE TABLE Mailbox (
 
 CREATE TABLE CustomMailbox (
 
-    mailboxID INT,
+    mailboxID NUMBER,
     ownersUsername VARCHAR(50) NOT NULL,
     dateCreated DATE NOT NULL,
     customLabel VARCHAR(20) NOT NULL,
@@ -67,11 +67,11 @@ CREATE TABLE CustomMailbox (
 
 CREATE TABLE Email (
 
-    emailID INT,
+    emailID NUMBER,
     sender VARCHAR(20) NOT NULL,
     recipient VARCHAR(20) NOT NULL,
     body VARCHAR(1000) NOT NULL,
-    mailboxID INT NOT NULL,
+    mailboxID NUMBER NOT NULL,
 
     PRIMARY KEY (emailID),
     FOREIGN KEY (sender) REFERENCES Account(username) ON DELETE CASCADE,
@@ -83,7 +83,7 @@ CREATE TABLE Email (
 CREATE TABLE Attachment (
 
     fileName VARCHAR(50),
-    emailID INT NOT NULL,
+    emailID NUMBER NOT NULL,
     fileType VARCHAR(5) NOT NULL,
 
     PRIMARY KEY (fileName, emailID),
@@ -103,8 +103,8 @@ CREATE TABLE Contact (
 
 CREATE TABLE UserContacts (
 
-    userContactID INT,
-    usersPhoneNumber VARCHAR(14) NOT NULL,
+    userContactID NUMBER,
+    usersPhoneNumber NUMBER NOT NULL,
     contactsEmailAddress VARCHAR(50) NOT NULL,
 
     PRIMARY KEY (userContactID),
@@ -123,11 +123,11 @@ INSERT INTO SupportTeam VALUES (3, 'Canada', 'Montreal');
 INSERT INTO SupportTeam VALUES (4, 'United States', 'New York');
 INSERT INTO SupportTeam VALUES (5, 'United States', 'Los Angeles');
 
-INSERT INTO "User" VALUES ('+17786652266', 'Siddharth', 'Nand');
-INSERT INTO "User" VALUES ('+34432348866', 'Michael', 'Perkins');
-INSERT INTO "User" VALUES ('+03441128899', 'Saif', 'Karnawi');
-INSERT INTO "User" VALUES ('+15557771111', 'Jennifer', 'Smith');
-INSERT INTO "User" VALUES ('+26668882222', 'Lora', 'Hill');
+INSERT INTO "User" VALUES (7786652266, 'Siddharth', 'Nand');
+INSERT INTO "User" VALUES (4432348866, 'Michael', 'Perkins');
+INSERT INTO "User" VALUES (3441128899, 'Saif', 'Karnawi');
+INSERT INTO "User" VALUES (5557771111, 'Jennifer', 'Smith');
+INSERT INTO "User" VALUES (6668882222, 'Lora', 'Hill');
 
 INSERT INTO Admin VALUES (1010, 'Dave', 'Colby', 1);
 INSERT INTO Admin VALUES (1011, 'Emma', 'Stome', 1);
@@ -135,12 +135,12 @@ INSERT INTO Admin VALUES (1012, 'Jessica', 'Khali', 2);
 INSERT INTO Admin VALUES (1013, 'Jone', 'Doe', 3);
 INSERT INTO Admin VALUES (1014, 'Jane', 'Doe', 4);
 
-INSERT INTO Account VALUES ('siddharthnand', TO_DATE('2019-01-01', 'YYYY-MM-DD'), '+17786652266', 1010);
-INSERT INTO Account VALUES ('michaelperkins', TO_DATE('2019-01-01', 'YYYY-MM-DD'), '+34432348866', 1011);
-INSERT INTO Account VALUES ('saifkarnawi', TO_DATE('2019-01-01', 'YYYY-MM-DD'), '+03441128899', 1012);
-INSERT INTO Account VALUES ('jennifersmith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), '+15557771111', 1013);
-INSERT INTO Account VALUES ('lorahill', TO_DATE('2019-01-01', 'YYYY-MM-DD'), '+26668882222', 1014);
-INSERT INTO Account VALUES ('k_smith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), '+26668882222', 1014);
+INSERT INTO Account VALUES ('siddharthnand', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 7786652266, 1010);
+INSERT INTO Account VALUES ('michaelperkins', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 4432348866, 1011);
+INSERT INTO Account VALUES ('saifkarnawi', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 3441128899, 1012);
+INSERT INTO Account VALUES ('jennifersmith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 5557771111, 1013);
+INSERT INTO Account VALUES ('lorahill', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 6668882222, 1014);
+INSERT INTO Account VALUES ('k_smith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 6668882222, 1014);
 
 INSERT INTO Mailbox VALUES (1, 'siddharthnand');
 INSERT INTO Mailbox VALUES (2, 'michaelperkins');
@@ -177,8 +177,8 @@ INSERT INTO Contact VALUES ('nand_s@gmail.com', 'Siddharth', 'Nand');
 INSERT INTO Contact VALUES ('jennifersmith@mail.com', 'Jennifer', 'Smith');
 INSERT INTO Contact VALUES ('admin@ubc.ca', 'UBC', 'Admin');
 
-INSERT INTO UserContacts VALUES (1, '+17786652266', 'michaelperkins@mail.com');
-INSERT INTO UserContacts VALUES (2, '+17786652266', 'saifkarnawi@mail.com');
-INSERT INTO UserContacts VALUES (3, '+17786652266', 'nand_s@gmail.com');
-INSERT INTO UserContacts VALUES (4, '+34432348866', 'admin@ubc.ca');
-INSERT INTO UserContacts VALUES (5, '+03441128899', 'jennifersmith@mail.com');
+INSERT INTO UserContacts VALUES (1, 7786652266, 'michaelperkins@mail.com');
+INSERT INTO UserContacts VALUES (2, 7786652266, 'saifkarnawi@mail.com');
+INSERT INTO UserContacts VALUES (3, 7786652266, 'nand_s@gmail.com');
+INSERT INTO UserContacts VALUES (4, 3441128899, 'admin@ubc.ca');
+INSERT INTO UserContacts VALUES (5, 3441128899, 'jennifersmith@mail.com');
