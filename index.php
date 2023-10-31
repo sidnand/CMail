@@ -8,17 +8,70 @@
 <body>
     <?php
         include('base.php');
-        $conn = connectToOracle();
+
+        $error_message = "";
+
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+            if ($_POST["login"]) {
+                $conn = connectToOracle();
+                $phone_number = $_POST["phone-number"];
+
+                $query = "SELECT * FROM \"User\" WHERE phoneNumber = :phone_number";
+                $stmt = oci_parse($conn, $query);
+                oci_bind_by_name($stmt, ":phone_number", $phone_number);
+                
+                $result = oci_execute($stmt);
+
+                if (!$result) {
+                    $error_message = "Oracle Execute Error " . OCIError($stmt)['message'];
+                    oci_close($conn);
+                    return false;
+                }
+
+                if (oci_fetch($stmt)) {
+                    $firstname = oci_result($stmt, "FIRSTNAME");
+                    $lastname = oci_result($stmt, "LASTNAME");
+                    $phone_number = oci_result($stmt, "PHONENUMBER");
+
+                    $_SESSION['userLoggedIn'] = true;
+                    $_SESSION['firstName'] = $firstname;
+                    $_SESSION['lastName'] = $lastname;
+
+                    header('Location: user.php');
+
+                    oci_close($conn);
+                } else {
+                    $error_message = "User not found, please create an account";
+                    oci_close($conn);
+                }
+
+
+            } else if (isset($_POST["signup"])) {
+                $conn = connectToOracle();
+                echo "Signup";
+            }
+
+        }
     ?>
 
 
     <div class="container">
         <h1 class="header">Email Service</h1>
+        <?php
+        
+            if ($error_message != "") {
+                echo "<div class='alert alert-danger' role='alert'>"
+                    . $error_message
+                    . "</div>";
+            }
+        
+        ?>
 
         <div class="row">
             <div class="col">
 
-                <form action="" class="form-group">
+                <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="form-group">
                     <h3>Login</h3>
                     <br>
 
@@ -30,13 +83,13 @@
 
                     <br>
 
-                    <button type="submit" class="btn btn-primary">Login</button>
+                    <input type="submit" name="login" class="btn btn-primary" value="Login">
                 </form>
 
             </div>
 
             <div class="col">
-                <form action="" class="form-group">
+                <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="form-group">
                     <h3>Signup</h3>
                     <br>
 
@@ -59,7 +112,7 @@
 
                     <br>
 
-                    <button type="submit" class="btn btn-primary">Signup</button>
+                    <input type="submit" name="signup" class="btn btn-primary" value="Signup">
                 </form>
 
 
