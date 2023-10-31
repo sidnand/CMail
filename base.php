@@ -18,42 +18,20 @@
 </style>
 
 <?php
-function connectToOracle() {
-    $conn = OCILogon("ora_sidnand", "a76648070", "dbhost.students.cs.ubc.ca:1522/stu");
-    if (!$conn) {
-        $err = OCIError();
-        $error_message = "Oracle Connect Error " . $err['message'];
-        echo "<script>";
-        echo "console.log('$error_message');";
-        echo "</script>";
-        return false;
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+
+    function connectToOracle() {
+        $conn = oci_connect("ora_sidnand", "a76648070", "dbhost.students.cs.ubc.ca:1522/stu");
+        if (!$conn) {
+            $err = OCIError();
+            $error_message = "Unable to connect to database. Contact admin.";
+            return false;
+        }
+
+        echo "<script>"
+        . "console.log('Connected to Oracle!')"
+        . "</script>";
+        return $conn;
     }
-
-    echo "<script>";
-    echo "console.log('Connected to Oracle!');";
-    echo "</script>";
-    return $conn;
-}
-
-function closeOracleConnection($conn) {
-    OCILogoff($conn);
-}
-
-function executeOracleQuery($conn, $sql) {
-    $stmt = OCIParse($conn, $sql);
-    if (!$stmt) {
-        $err = OCIError($conn);
-        echo "Oracle Parse Error " . $err['message'];
-        return false;
-    }
-    
-    $result = OCIExecute($stmt);
-    if (!$result) {
-        $err = OCIError($stmt);
-        echo "Oracle Execute Error " . $err['message'];
-        return false;
-    }
-
-    return $stmt;
-}
 ?>
