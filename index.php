@@ -18,7 +18,7 @@
     <?php
         include('base.php');
 
-        if (isset($_SESSION['userLoggedIn'])) {
+        if (isset($_COOKIE['userLoggedIn']) && $_COOKIE['userLoggedIn'] == "1") {
             header('Location: user.php');
         }
 
@@ -41,10 +41,8 @@
                         $error_message = "User not found, please create an account";
                         oci_close($conn);
                     } else {
-                        $_SESSION['userLoggedIn'] = true;
-                        $_SESSION['firstName'] = $user['firstname'];
-                        $_SESSION['lastName'] = $user['lastname'];
-                        $_SESSION['phoneNumber'] = $user['phone_number'];
+                        setcookie("userLoggedIn", "1", time() + 3600, "/");
+                        setcookie("phoneNumber", (string)$phone_number, time() + 3600, "/");
 
                         header('Location: user.php');
                     }
@@ -68,7 +66,6 @@
                     if ($user) {
                         $error_message = "User already exists";
                         oci_close($conn);
-                        // return false;
                     } else {
 
                         $result = insert_user($conn, $firstname, $lastname, $phone_number);
@@ -76,12 +73,9 @@
                         if (!$result) {
                             $error_message = "Error creating user";
                             oci_close($conn);
-                            // return false;
                         } else {
-                            $_SESSION['userLoggedIn'] = true;
-                            $_SESSION['firstName'] = $firstname;
-                            $_SESSION['lastName'] = $lastname;
-                            $_SESSION['phoneNumber'] = $phone_number;
+                            setcookie("userLoggedIn", "1", time() + 3600, "/");
+                            setcookie("phoneNumber", (string)$phone_number, time() + 3600, "/");
 
                             header('Location: user.php');
                         }
@@ -205,7 +199,7 @@
     </div>
 
     <div class="logo">
-        <img src="assets/logo.png">
+        <img src="./assets/logo.png">
     </div>
     
 </html>
