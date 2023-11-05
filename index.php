@@ -29,19 +29,26 @@
             if (isset($_POST["login"])) {
                 $conn = connect_to_oracle();
                 $phone_number = $_POST["phone-number"];
-                $user = get_user($conn, $phone_number);
 
-                if (!$user) {
-                    $error_message = "User not found, please create an account";
+                if (!is_numeric($phone_number)) {
+                    $error_message = "Phone number must be a number";
                     oci_close($conn);
-                    // return false;
                 } else {
-                    $_SESSION['userLoggedIn'] = true;
-                    $_SESSION['firstName'] = $user['firstname'];
-                    $_SESSION['lastName'] = $user['lastname'];
-                    $_SESSION['phoneNumber'] = $user['phone_number'];
 
-                    header('Location: user.php');
+                    $user = get_user($conn, $phone_number);
+
+                    if (!$user) {
+                        $error_message = "User not found, please create an account";
+                        oci_close($conn);
+                    } else {
+                        $_SESSION['userLoggedIn'] = true;
+                        $_SESSION['firstName'] = $user['firstname'];
+                        $_SESSION['lastName'] = $user['lastname'];
+                        $_SESSION['phoneNumber'] = $user['phone_number'];
+
+                        header('Location: user.php');
+                    }
+
                 }
 
             } else if (isset($_POST["signup"])) {
@@ -51,27 +58,34 @@
                 $lastname = $_POST["lastname"];
                 $phone_number = $_POST["phone-number"];
 
-                $user = get_user($conn, $phone_number);
-
-                if ($user) {
-                    $error_message = "User already exists";
+                if (!is_numeric($phone_number)) {
+                    $error_message = "Phone number must be a number";
                     oci_close($conn);
-                    // return false;
                 } else {
 
-                    $result = insert_user($conn, $firstname, $lastname, $phone_number);
+                    $user = get_user($conn, $phone_number);
 
-                    if (!$result) {
-                        $error_message = "Error creating user";
+                    if ($user) {
+                        $error_message = "User already exists";
                         oci_close($conn);
                         // return false;
                     } else {
-                        $_SESSION['userLoggedIn'] = true;
-                        $_SESSION['firstName'] = $firstname;
-                        $_SESSION['lastName'] = $lastname;
-                        $_SESSION['phoneNumber'] = $phone_number;
 
-                        header('Location: user.php');
+                        $result = insert_user($conn, $firstname, $lastname, $phone_number);
+
+                        if (!$result) {
+                            $error_message = "Error creating user";
+                            oci_close($conn);
+                            // return false;
+                        } else {
+                            $_SESSION['userLoggedIn'] = true;
+                            $_SESSION['firstName'] = $firstname;
+                            $_SESSION['lastName'] = $lastname;
+                            $_SESSION['phoneNumber'] = $phone_number;
+
+                            header('Location: user.php');
+                        }
+
                     }
 
                 }
