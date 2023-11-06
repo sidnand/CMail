@@ -36,17 +36,32 @@
     <div class="card">
         <div class="card-body d-flex flex-column">
             <h2 class="card-title">Welcome to your account, <?php echo $_SESSION['firstName'] . ' ' . $_SESSION['lastName']; ?></h2>
-            <div class="text-end mt-3">
-                <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="form-group">
+            <div class="d-flex gap-4 pt-3">
+                <form action="add_account.php" method="post">
+                    <button type="submit" class="btn btn-primary" name="select">Select An Account</button>
+                </form>
+
+                <form action="add_account.php" method="post">
+                    <button type="submit" class="btn btn-primary" name="add">Add Account</button>
+                </form>
+
+                <form action="delete_accounts.php" method="post">
+                    <button type="submit" class="btn btn-primary" name="delete">Delete Account</button>
+                </form>
+
+                <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="form-group ms-auto">
                     <button type="submit" name="logout" class="btn btn-danger">Logout</button>
                 </form>
             </div>
         </div>
     </div>
+
     <?php endif; ?>
 </div>
 <div class="logo">
     <img src="assets/logo.png">
 </div>
+
+
 </body>
 </html>
