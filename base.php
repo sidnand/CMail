@@ -18,11 +18,10 @@
 </style>
 
 <?php
-    error_reporting(E_ALL);
+    error_reporting(E_ERROR | E_PARSE);    
     ini_set('display_errors', 1);
+    session_start();
 
-    // session_save_path('./sessions')
-    // session_start();
 
     function connect_to_oracle() {
         $conn = oci_connect("ora_sidnand", "a76648070", "dbhost.students.cs.ubc.ca:1522/stu");

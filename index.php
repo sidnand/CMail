@@ -18,35 +18,26 @@
     <?php
         include('base.php');
 
-        if (isset($_COOKIE['userLoggedIn']) && $_COOKIE['userLoggedIn'] == "1") {
-            header('Location: user.php');
-        }
-
         $error_message = "";
-
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
-
             if (isset($_POST["login"])) {
                 $conn = connect_to_oracle();
                 $phone_number = $_POST["phone-number"];
+                $user = get_user($conn, $phone_number);
 
-                if (!is_numeric($phone_number)) {
-                    $error_message = "Phone number must be a number";
+                if (strlen($phone_number) !== 10) {
+                    $error_message = "Please enter a valid phone number that is 10 digits.";
+                    oci_close($conn);
+                } else if (!$user) {
+                    $error_message = "User not found, please create an account.";
                     oci_close($conn);
                 } else {
+                    $_SESSION['userLoggedIn'] = true;
+                    $_SESSION['firstName'] = $user['firstname'];
+                    $_SESSION['lastName'] = $user['lastname'];
+                    $_SESSION['phoneNumber'] = $user['phone_number'];
 
-                    $user = get_user($conn, $phone_number);
-
-                    if (!$user) {
-                        $error_message = "User not found, please create an account";
-                        oci_close($conn);
-                    } else {
-                        setcookie("userLoggedIn", "1", time() + 3600, "/");
-                        setcookie("phoneNumber", (string)$phone_number, time() + 3600, "/");
-
-                        header('Location: user.php');
-                    }
-
+                    header('Location: user.php');
                 }
 
             } else if (isset($_POST["signup"])) {
@@ -56,50 +47,44 @@
                 $lastname = $_POST["lastname"];
                 $phone_number = $_POST["phone-number"];
 
-                if (!is_numeric($phone_number)) {
-                    $error_message = "Phone number must be a number";
+                $user = get_user($conn, $phone_number);
+
+                if (strlen($phone_number) !== 10) {
+                    $error_message = "Please enter a valid phone number that is 10 digits.";
+                    oci_close($conn);
+                } else if ($user) {
+                    $error_message = "User already exists";
                     oci_close($conn);
                 } else {
 
-                    $user = get_user($conn, $phone_number);
+                    $result = insert_user($conn, $firstname, $lastname, $phone_number);
 
-                    if ($user) {
-                        $error_message = "User already exists";
+                    if (!$result) {
+                        $error_message = "Error creating user.";
                         oci_close($conn);
                     } else {
+                        $_SESSION['userLoggedIn'] = true;
+                        $_SESSION['firstName'] = $firstname;
+                        $_SESSION['lastName'] = $lastname;
+                        $_SESSION['phoneNumber'] = $phone_number;
 
-                        $result = insert_user($conn, $firstname, $lastname, $phone_number);
-
-                        if (!$result) {
-                            $error_message = "Error creating user";
-                            oci_close($conn);
-                        } else {
-                            setcookie("userLoggedIn", "1", time() + 3600, "/");
-                            setcookie("phoneNumber", (string)$phone_number, time() + 3600, "/");
-
-                            header('Location: user.php');
-                        }
-
+                        header('Location: user.php');
                     }
 
                 }
             }
-
         }
-
         function get_user($conn, $phone_number) {
             $query = "SELECT * FROM \"User\" WHERE phoneNumber = :phone_number";
             $stmt = oci_parse($conn, $query);
             oci_bind_by_name($stmt, ":phone_number", $phone_number);
             
             $result = oci_execute($stmt);
-
             if (!$result) {
                 $error_message = "Oracle Execute Error " . OCIError($stmt)['message'];
                 oci_close($conn);
                 return false;
             }
-
             if (oci_fetch($stmt)) {
                 
                 return array(
@@ -107,32 +92,24 @@
                     "lastname" => oci_result($stmt, "LASTNAME"),
                     "phone_number" => oci_result($stmt, "PHONENUMBER")
                 );
-
             }
-
             return false;
         }
-
         function insert_user($conn, $first_name, $last_name, $phone_number) {
             $query = "INSERT INTO \"User\" VALUES (:phone_number, :first_name, :last_name)";
             $stmt = oci_parse($conn, $query);
             oci_bind_by_name($stmt, ":phone_number", $phone_number);
             oci_bind_by_name($stmt, ":first_name", $first_name);
             oci_bind_by_name($stmt, ":last_name", $last_name);
-
             $result = oci_execute($stmt);
-
             if (!$result) {
                 $error_message = "Oracle Execute Error " . oci_error($stmt)['message'];
                 oci_close($conn);
                 return false;
             }
-
             return true;
         }
     ?>
-
-
     <div class="container">
         <h1 class="header">Email Service</h1>
         <?php
@@ -144,32 +121,24 @@
             }
         
         ?>
-
         <div class="row">
             <div class="col">
-
                 <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="form-group">
                     <h3>Login</h3>
                     <br>
-
                     <div class="row">
                         <div class="col">
                             <input type="phone-number" name="phone-number" class="form-control" id="phone-number" placeholder="Phone number" required>
                         </div>
                     </div>
-
                     <br>
-
                     <input type="submit" name="login" class="btn btn-primary" value="Login">
                 </form>
-
             </div>
-
             <div class="col">
                 <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="form-group">
                     <h3>Signup</h3>
                     <br>
-
                     <div class="row">
                         <div class="col">
                             <input type="firstname" name="firstname" class="form-control" id="firstname" placeholder="Firstname" required>
@@ -178,28 +147,20 @@
                             <input type="lastname" name="lastname" class="form-control" id="lastname" placeholder="Lastname" required>
                         </div>
                     </div>
-
                     <br>
-
                     <div class="row">
                         <div class="col">
                             <input type="phone-number" name="phone-number" class="form-control" id="phone-number" placeholder="Phone number" required>
                         </div>
                     </div>
-
                     <br>
-
                     <input type="submit" name="signup" class="btn btn-primary" value="Signup">
                 </form>
-
-
             </div>
         </div>
-
     </div>
-
     <div class="logo">
-        <img src="./assets/logo.png">
+        <img src="assets/logo.png">
     </div>
     
 </html>
