@@ -33,20 +33,20 @@
 
 <div class="container">
     <?php if (isset($_SESSION['userLoggedIn'])): ?>
-    <div class="card">
+    <div class="card mb-3">
         <div class="card-body d-flex flex-column">
             <h2 class="card-title">Welcome to your account, <?php echo $_SESSION['firstName'] . ' ' . $_SESSION['lastName']; ?></h2>
             <div class="d-flex gap-4 pt-3">
-                <form action="add_account.php" method="post">
-                    <button type="submit" class="btn btn-primary" name="select">Select An Account</button>
+                <form method="post">
+                    <button type="button" class="btn btn-primary" name="select" onclick="toggleCard('select')">Select An Account</button>
                 </form>
 
-                <form action="add_account.php" method="post">
-                    <button type="submit" class="btn btn-primary" name="add">Add Account</button>
+                <form method="post">
+                    <button type="button" class="btn btn-primary" name="add" onclick="toggleCard('add')">Add Account</button>
                 </form>
 
-                <form action="delete_accounts.php" method="post">
-                    <button type="submit" class="btn btn-primary" name="delete">Delete Account</button>
+                <form method="post">
+                    <button type="button" class="btn btn-primary" name="delete" onclick="toggleCard('delete')">Delete Account</button>
                 </form>
 
                 <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="form-group ms-auto">
@@ -55,13 +55,49 @@
             </div>
         </div>
     </div>
-
+    <div id="select" style="display: none;">
+        <div class="card mb-3">
+            <div class="card-body d-flex flex-column">
+                <h2 class="card-title">Second Card Content</h2>
+                <p></p>
+            </div>
+        </div>
+    </div>
+    <div id="add" style="display: none;">
+        <div class="card mb-3">
+            <div class="card-body d-flex flex-column">
+                <h2 class="card-title">third Card Content</h2>
+                <p></p>
+            </div>
+        </div>
+    </div>
+    <div id="delete" style="display: none;">
+        <div class="card mb-3">
+            <div class="card-body d-flex flex-column">
+                <h2 class="card-title">fourth Card Content</h2>
+                <p></p>
+            </div>
+        </div>
+    </div>
     <?php endif; ?>
 </div>
 <div class="logo">
     <img src="assets/logo.png">
 </div>
+<script>
+    function toggleCard(cardId) {
+        var card = document.getElementById(cardId);
 
+        if (card.style.display === "none" || card.style.display === "") {
+            document.getElementById('select').style.display = "none";
+            document.getElementById('add').style.display = "none";
+            document.getElementById('delete').style.display = "none";
+            card.style.display = "block";
+        } else {
+            card.style.display = "none";
+        }
+    }
+</script>
 
 </body>
 </html>
