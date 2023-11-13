@@ -34,6 +34,8 @@
         $_SESSION['ownersPhoneNumber'] = $account['ownersPhoneNumber'];
         $_SESSION['adminsNumber'] = $account['adminsNumber'];
 
+        $_SESSION['username'] = $account['username'];
+
         header('Location: account.php');
     }
 
