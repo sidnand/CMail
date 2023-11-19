@@ -20,6 +20,7 @@
 
         $error_message = "";
         $success_message = "";
+        $email_query = "";
 
         if (isset($_SESSION['userLoggedIn'])) {
             if (isset($_POST["logout"])) {
@@ -51,6 +52,63 @@
             }
 
             oci_close($conn);
+        }
+
+        if (isset($_POST['search-email'])) {
+            $input = $_POST['search-input'];
+            $query = parseAndExecuteQuery($input);
+
+            if (isset($query['error'])) {
+                $error_message = $query['error'];
+            } else {
+                $email_query = $query;
+            }
+        }
+
+        function parseAndExecuteQuery($query) {
+            $mailboxID = (int) $_SESSION['mailboxID'];
+            $tokens = preg_split('/\s+/', $query, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+
+            // Initialize variables
+            $sqlQuery = "SELECT * FROM Email WHERE mailboxID = $mailboxID AND";
+            $condition = "";
+
+            $valid_tokens = [
+                "sender" => "sender = ",
+                "body" => "body ",
+                "contains" => "LIKE ",
+                "and" => "AND ",
+                "or" => "OR ",
+                "=" => "",
+            ];
+
+            $prev_token_contains = false;
+            foreach ($tokens as $key => $token) {
+                if (preg_match('/^".*"$/', $token)) {
+                    $token = str_replace('"', '', $token);
+                    if ($prev_token_contains) {
+                        $condition .= "'%$token%' ";
+                    } else {
+                        $condition .= "'$token' ";
+                    }
+                } elseif (isset($valid_tokens[$token])) {
+                    $condition .= $valid_tokens[$token];
+
+                    if ($token == "contains") {
+                        $prev_token_contains = true;
+                    } else {
+                        $prev_token_contains = false;
+                    }
+                } else {
+                    return [
+                        "error" => "Invalid token: $token"
+                    ];
+                }
+            }
+        
+            $sqlQuery .= " " . $condition;
+
+            return $sqlQuery;
         }
 
         function send_email($conn, $sender, $recipient, $body, $attachment) {
@@ -145,10 +203,15 @@
             return $mailboxID;
         }
 
-        function get_emails() {
+        function get_emails($custom=false) {
             $conn = connect_to_oracle();
             $mailboxID = (int) $_SESSION['mailboxID'];
-            $query = "SELECT * FROM Email WHERE mailboxID = $mailboxID";
+            if ($custom) {
+                global $email_query;
+                $query = $email_query;
+            } else {
+                $query = "SELECT * FROM Email WHERE mailboxID = $mailboxID";
+            }
             $stmt = oci_parse($conn, $query);
             
             if (!$stmt) {
@@ -304,16 +367,20 @@
         </div>
 
         <div class="card mb-3">
-            <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="get" class="form-group card-body d-flex flex-column">
+            <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="form-group card-body d-flex flex-column">
                 <div class="input-group">
-                    <input type="text" name="search_from" class="form-control" placeholder="Search where 'From' = " onclick="setActive(this)">
-                    <input type="text" name="search_body" class="form-control" placeholder="Search where 'Body' = " onclick="setActive(this)">
-                    <button type="submit" name="search-email" class="btn btn-primary">Search</button>
+                    <input type="text" name="search-input" class="form-control" placeholder="Search" id="search-input">
+                    <div class="btn-group">
+                        <button type="submit" name="search-email" class="btn btn-primary">Search</button>
+                        <button onclick="window.location.reload()" class="btn btn-secondary">Clear</button>
+                    </div>
                 </div>
                 <br>
                 <div style="display: inline-block">
-                    <button type="button" class="btn btn-secondary" onclick="updateOperator('OR')">OR</button>
-                    <button type="button" class="btn btn-secondary" onclick="updateOperator('AND')">AND</button>
+                    <button type="button" class="btn btn-success" onclick="updateOperator('sender = ', true)">sender</button>
+                    <button type="button" class="btn btn-success" onclick="updateOperator('body contains', true)">body contains</button>
+                    <button type="button" class="btn btn-info" onclick="updateOperator('or')">or</button>
+                    <button type="button" class="btn btn-info" onclick="updateOperator('and')">and</button>
                 </div>
             </form>
 
@@ -322,12 +389,16 @@
             <div class="card-body d-flex flex-column">
 
                 <?php
-                    $emails = get_emails();
+                    if ($email_query != "") {
+                        $emails = get_emails(true);
+                    } else {
+                        $emails = get_emails();
+                    }
 
                     if ($emails !== false) {
                         display_emails($emails);
                     } else {
-                        echo '<div class="alert alert-danger" role="alert">Error fetching emails.</div>';
+                        echo '<div class="alert alert-danger" role="alert">Error retrieving emails.</div>';
                     }
                 ?>
 
@@ -391,7 +462,7 @@
 </div>
 
     <script>
-        var activeInput = null;
+        var activeInput = document.getElementById('search-input');
 
         document.getElementById('composeEmailButton').addEventListener('click', function () {
             var myModal = new bootstrap.Modal(document.getElementById('compose-email'));
@@ -400,10 +471,9 @@
 
         function setActive(input) { activeInput = input; }
 
-        function updateOperator(operator) {
-            console.log(activeInput);
-
-            if (activeInput != null) activeInput.value += ' ' + operator + ' ';
+        function updateOperator(operator, string=false) {
+            if (string) activeInput.value += ' ' + operator + ' ' + "\"";
+            else activeInput.value += ' ' + operator + ' ';
         }
     </script>
 
