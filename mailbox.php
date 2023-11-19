@@ -273,7 +273,7 @@
             echo '<thead>';
             echo '<tr>';
             // echo '<th>Email ID</th>';
-            echo '<th>From</th>';
+            echo '<th>Sender</th>';
             echo '<th>Body</th>';
             echo '<th>Attachment</th>';
             echo '</tr>';
