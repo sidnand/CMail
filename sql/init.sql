@@ -177,6 +177,12 @@ INSERT INTO Mailbox VALUES (3, 'saifkarnawi');
 INSERT INTO Mailbox VALUES (4, 'jennifersmith');
 INSERT INTO Mailbox VALUES (5, 'lorahill');
 INSERT INTO Mailbox VALUES (6, 'k_smith');
+INSERT INTO Mailbox VALUES (7, 'siddharthnand');
+INSERT INTO Mailbox VALUES (8, 'michaelperkins');
+INSERT INTO Mailbox VALUES (9, 'saifkarnawi');
+INSERT INTO Mailbox VALUES (10, 'jennifersmith');
+INSERT INTO Mailbox VALUES (11, 'lorahill');
+INSERT INTO Mailbox VALUES (12, 'k_smith');
 
 INSERT INTO CustomMailbox VALUES (7, 'siddharthnand', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Important');
 INSERT INTO CustomMailbox VALUES (8, 'michaelperkins', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Work');
