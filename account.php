@@ -218,7 +218,6 @@
             $query = "SELECT DISTINCT sender FROM CustomMailbox
             JOIN Email ON CustomMailbox.mailboxID = Email.mailboxID
             WHERE customLabel = :label";
-
             $stmt = oci_parse($conn, $query);
             oci_bind_by_name($stmt, ":label", $label);
         }
