@@ -178,7 +178,8 @@
         }
 
         function get_mailbox_id($conn, $username) {
-            $query = "SELECT mailboxID FROM Mailbox WHERE ownersUsername = '$username'";
+            $query = "SELECT mailboxID FROM Mailbox WHERE ownersUsername = '$username' 
+            ORDER BY mailboxID";
             $stmt = oci_parse($conn, $query);
 
             if (!$stmt) {
