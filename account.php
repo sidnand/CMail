@@ -278,7 +278,7 @@
 
     function insert_custom_mailbox($conn, $customLabel) {
         
-        for($i = 0; $i < 10000; $i++) {
+        for($i = 10; $i < 10000; $i++) {
             if(!mailboxExists($conn, $i)) {
                 $mailboxID = $i;
                 break;
@@ -532,46 +532,94 @@
         return true;
     }
 
-    function get_email_count($label) {
 
-        if($label == 'General') {
-            $mailboxID = (int) $_SESSION[$label];
-            $query = "SELECT COUNT(*) FROM Email WHERE mailboxID = $mailboxID";
-        } else {
-            $query = "SELECT COUNT(*) FROM CustomMailbox
-            JOIN Email ON CustomMailbox.mailboxID = Email.mailboxID
-            WHERE customLabel = :label";
-        }
-        $conn = connect_to_oracle();
 
+
+
+    function get_all_email_counts($conn) {
+        $username = $_SESSION['username'];
+        $query = "SELECT mailboxID, COUNT(*) as EMAIL_COUNT FROM Email WHERE recipient = '$username' GROUP BY mailboxID ORDER BY mailboxID ASC";
         $stmt = oci_parse($conn, $query);
 
-        oci_bind_by_name($stmt, ":label", $label);
-        
-        if (!$stmt) {
-            $error = oci_error($stmt);
-            oci_close($conn);
-            echo "<script>"
-                . "console.log('1Error: " . htmlentities($error['message']) . "')"
-                . "</script>";
-            return false;
-        }
-
         $result = oci_execute($stmt);
-
         if (!$result) {
-            $error = oci_error($stmt);
             oci_close($conn);
             echo "<script>"
-                . "console.log('2Error: " . htmlentities($error['message']) . "')"
-                . "</script>";
+            . "console.log('Result = false!')"
+            . "</script>";
             return false;
         }
 
-        $row = oci_fetch_assoc($stmt);
+        $rows = array();
+
+        while ($row = oci_fetch_assoc($stmt)) {
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+
+    function get_email_count($label) {
+
+        $conn = connect_to_oracle();
+
+        $count = 0;
+        $all = get_all_email_counts($conn);
+
+        if($label == 'General') {
+            $count = $all[0]['EMAIL_COUNT'];
+        } else {
+            $query = "SELECT mailboxID from CustomMailbox WHERE customLabel = :label";
+
+            $stmt = oci_parse($conn, $query);
+
+            oci_bind_by_name($stmt, ":label", $label);
+            
+            if (!$stmt) {
+                $error = oci_error($stmt);
+                oci_close($conn);
+                echo "<script>"
+                    . "console.log('1Error: " . htmlentities($error['message']) . "')"
+                    . "</script>";
+                return false;
+            }
+
+            $result = oci_execute($stmt);
+
+            if (!$result) {
+                $error = oci_error($stmt);
+                oci_close($conn);
+                echo "<script>"
+                    . "console.log('2Error: " . htmlentities($error['message']) . "')"
+                    . "</script>";
+                return false;
+            }
+
+            $row = oci_fetch_assoc($stmt);
+
+            $mailboxID = $row['MAILBOXID'];
+
+            if ($row && isset($all)) {
+                foreach ($all as $a) {
+                    if ($a['MAILBOXID'] == $mailboxID) {
+                        $count = $a['EMAIL_COUNT'];
+                        break;
+                    }
+                }
+            }
+        }
+
+        // if($label == 'General') {
+        //     $count = $row['COUNT(*)'][0];
+        // } else {
+        //     $query = "SELECT COUNT(*) FROM CustomMailbox
+        //     JOIN Email ON CustomMailbox.mailboxID = Email.mailboxID
+        //     WHERE customLabel = :label";
+        // }
 
         $displayCount = true;
-        return $row['COUNT(*)'];
+        return $count;
 
     }
 
