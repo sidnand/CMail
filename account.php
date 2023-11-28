@@ -278,7 +278,7 @@
 
     function insert_custom_mailbox($conn, $customLabel) {
         
-        for($i = 10; $i < 10000; $i++) {
+        for($i = 13; $i < 10000; $i++) {
             if(!mailboxExists($conn, $i)) {
                 $mailboxID = $i;
                 break;
