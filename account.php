@@ -190,6 +190,59 @@
 
     }
 
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['get_senders'])) {
+
+        $container = "select";
+        $conn = connect_to_oracle();
+        $mailboxes = get_mailboxes($conn);
+
+        $selectedMailbox = $_POST['selected_mailbox'];
+        //echo $_SESSION[$selectedMailbox];
+        $senders = get_senders($conn, $selectedMailbox);
+        $popup = "senders";
+
+    }
+
+    function get_senders($conn, $label) {
+        
+        //echo $label;
+
+        if($label == 'General') {
+            $query = "SELECT sender FROM Email
+            WHERE mailboxID = :mailboxID";
+
+            $stmt = oci_parse($conn, $query);
+            oci_bind_by_name($stmt, ":mailboxID", $_SESSION[$label]);
+            
+        } else {
+            $query = "SELECT sender FROM CustomMailbox
+            JOIN Email ON CustomMailbox.mailboxID = Email.mailboxID
+            WHERE customLabel = :label";
+
+            $stmt = oci_parse($conn, $query);
+            oci_bind_by_name($stmt, ":label", $label);
+        }
+
+        $result = oci_execute($stmt);
+
+        if (!$result) {
+            $error = oci_error($stmt);
+            oci_close($conn);
+            echo "<script>"
+            . "console.log('Error: " . htmlentities($error['message']) . "')"
+            . "</script>";
+            return false;
+        }
+
+        $senders = array();
+        while ($row = oci_fetch_assoc($stmt)) {
+            $senders[] = $row;
+        }
+
+        return $senders;
+
+    }
+
     function moveEmails($conn, $mailboxID1, $mailboxID2) {
 
         $query = "UPDATE Email
@@ -533,12 +586,9 @@
     }
 
 
-
-
-
     function get_all_email_counts($conn) {
         $username = $_SESSION['username'];
-        $query = "SELECT mailboxID, COUNT(*) as EMAIL_COUNT FROM Email WHERE recipient = '$username' GROUP BY mailboxID ORDER BY mailboxID ASC";
+        $query = "SELECT mailboxID, COUNT(*) as EMAIL_COUNT FROM Email WHERE recipient = '$username' GROUP BY mailboxID ORDER BY mailboxID";
         $stmt = oci_parse($conn, $query);
 
         $result = oci_execute($stmt);
@@ -554,6 +604,7 @@
 
         while ($row = oci_fetch_assoc($stmt)) {
             $rows[] = $row;
+            echo $row['EMAIL_COUNT'];
         }
 
         return $rows;
@@ -566,11 +617,12 @@
 
         $count = 0;
         $all = get_all_email_counts($conn);
+        $mailboxID = $_SESSION[$label];
 
         if($label == 'General') {
             $count = $all[0]['EMAIL_COUNT'];
         } else {
-            $query = "SELECT mailboxID from CustomMailbox WHERE customLabel = :label";
+            $query = "SELECT mailboxID from Mailbox WHERE customLabel = :label";
 
             $stmt = oci_parse($conn, $query);
 
@@ -725,6 +777,7 @@
         echo '<label>&nbsp;</label>';
         echo '<input type="submit" name="select_mailbox_submit" value="Select Mailbox" class="btn btn-primary btn-block">';
         echo '<input type="submit" name="get_email_count" value="Get Email Count" class="btn btn-primary btn-block">';
+        echo '<input type="submit" name="get_senders" value="List Correspondents in Mailbox" class="btn btn-primary btn-block">';
         echo '</div>';
         
         echo '</form>';
@@ -921,6 +974,34 @@
                 echo '<br>';
                 echo $_SESSION[$ID];
             }
+        }
+        echo '</p>';
+        echo '</div>';
+
+        // Trigger the adminPopup using JavaScript
+        echo '<script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("adminPopup").style.display = "block";
+        });
+
+        function closeAdminPopup() {
+            document.getElementById("adminPopup").style.display = "none";
+        }
+        </script>';
+    }
+    if ($popup == "senders") {
+        // Display a pop-up for the "admin" container
+
+        echo '<div id="adminPopup" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 40px; background-color: #fff; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); z-index: 1000;">
+        <span onclick="closeAdminPopup()" style="position: absolute; top: 10px; right: 10px; cursor: pointer;">X</span>
+        <p>';
+        echo "List of correspondents in ";
+        echo $selectedMailbox;
+        echo ":";
+        echo '<br>';
+        foreach($senders as $sender) {
+            echo '<br>';
+            echo $sender['SENDER'];
         }
         echo '</p>';
         echo '</div>';
