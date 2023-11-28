@@ -208,14 +208,14 @@
         //echo $label;
 
         if($label == 'General') {
-            $query = "SELECT sender FROM Email
+            $query = "SELECT DISTINCT sender FROM Email
             WHERE mailboxID = :mailboxID";
 
             $stmt = oci_parse($conn, $query);
             oci_bind_by_name($stmt, ":mailboxID", $_SESSION[$label]);
-            
+
         } else {
-            $query = "SELECT sender FROM CustomMailbox
+            $query = "SELECT DISTINCT sender FROM CustomMailbox
             JOIN Email ON CustomMailbox.mailboxID = Email.mailboxID
             WHERE customLabel = :label";
 
