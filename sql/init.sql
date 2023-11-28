@@ -9,6 +9,13 @@ drop table ATTACHMENT cascade constraints;
 drop table CONTACT cascade constraints;
 drop table USERCONTACTS cascade constraints;
 
+DROP SEQUENCE email_sequence;
+DROP SEQUENCE mailbox_sequence;
+DROP SEQUENCE custom_mailbox_sequence;
+DROP SEQUENCE userContact_sequence;
+
+
+
 CREATE TABLE SupportTeam (
 
     teamCode NUMBER,
@@ -119,11 +126,36 @@ CREATE TABLE UserContacts (
     contactsEmailAddress VARCHAR(50) NOT NULL,
 
     PRIMARY KEY (userContactID),
-    FOREIGN KEY (usersPhoneNumber) REFERENCES "User"(phoneNumber) ON DELETE CASCADE,
-    FOREIGN KEY (contactsEmailAddress) REFERENCES Contact(emailAddress) ON DELETE CASCADE
+    FOREIGN KEY (usersPhoneNumber) REFERENCES "User"(phoneNumber) ON DELETE CASCADE
 
 );
 
+
+
+
+CREATE SEQUENCE email_sequence
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+CREATE SEQUENCE mailbox_sequence
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+CREATE SEQUENCE custom_mailbox_sequence
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+CREATE SEQUENCE userContact_sequence
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
 
 
 
@@ -153,27 +185,42 @@ INSERT INTO Account VALUES ('jennifersmith', TO_DATE('2019-01-01', 'YYYY-MM-DD')
 INSERT INTO Account VALUES ('lorahill', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 6668882222, 1014);
 INSERT INTO Account VALUES ('k_smith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 6668882222, 1014);
 
-INSERT INTO Mailbox VALUES (1, 'siddharthnand');
-INSERT INTO Mailbox VALUES (2, 'michaelperkins');
-INSERT INTO Mailbox VALUES (3, 'saifkarnawi');
-INSERT INTO Mailbox VALUES (4, 'jennifersmith');
-INSERT INTO Mailbox VALUES (5, 'lorahill');
-INSERT INTO Mailbox VALUES (6, 'k_smith');
+INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'siddharthnand');
+INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'michaelperkins');
+INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'saifkarnawi');
+INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'jennifersmith');
+INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'lorahill');
+INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'k_smith');
 
-INSERT INTO CustomMailbox VALUES (1, 'siddharthnand', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Important');
-INSERT INTO CustomMailbox VALUES (2, 'michaelperkins', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Work');
-INSERT INTO CustomMailbox VALUES (3, 'saifkarnawi', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Family');
-INSERT INTO CustomMailbox VALUES (4, 'jennifersmith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Friends');
-INSERT INTO CustomMailbox VALUES (5, 'lorahill', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Important');
-INSERT INTO CustomMailbox VALUES (6, 'k_smith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Junk');
+INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'siddharthnand', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Important');
+INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'michaelperkins', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Work');
+INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'saifkarnawi', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Family');
+INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'jennifersmith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Friends');
+INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'lorahill', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Important');
+INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'k_smith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Junk');
 
-INSERT INTO Email VALUES (1, 'siddharthnand', 'michaelperkins', 'Hello, how are you?', 1);
-INSERT INTO Email VALUES (2, 'michaelperkins', 'siddharthnand', 'I am good, how are you?', 2);
-INSERT INTO Email VALUES (3, 'saifkarnawi', 'jennifersmith', 'Can we have a meeting tomorrow at 5pm?', 3);
-INSERT INTO Email VALUES (4, 'jennifersmith', 'saifkarnawi', 'Can we delay it till next week?', 4);
-INSERT INTO Email VALUES (5, 'lorahill', 'k_smith', 'I am going to be late for dinner tonight', 5);
-INSERT INTO Email VALUES (6, 'k_smith', 'lorahill', 'Ok, I will wait for you', 6);
-INSERT INTO Email VALUES (7, 'siddharthnand', 'lorahill', 'You did not get the job offer', 1);
+INSERT INTO Email VALUES (email_sequence.nextval, 'siddharthnand', 'michaelperkins', 'Hello, how are you?', 2);
+INSERT INTO Email VALUES (email_sequence.nextval, 'michaelperkins', 'siddharthnand', 'I am good, how are you?', 1);
+INSERT INTO Email VALUES (email_sequence.nextval, 'saifkarnawi', 'siddharthnand', 'Can we have a meeting tomorrow at 5pm?', 1);
+INSERT INTO Email VALUES (email_sequence.nextval, 'saifkarnawi', 'michaelperkins', 'Can we delay it till next week?', 2);
+INSERT INTO Email VALUES (email_sequence.nextval, 'michaelperkins', 'saifkarnawi', 'I am going to be late for dinner tonight', 3);
+INSERT INTO Email VALUES (email_sequence.nextval, 'siddharthnand', 'saifkarnawi', 'Ok, I will wait for you', 3);
+INSERT INTO Email VALUES (email_sequence.nextval, 'siddharthnand', 'saifkarnawi', 'You did not get the job offer', 3);
+INSERT INTO Email VALUES (email_sequence.nextval, 'saifkarnawi', 'siddharthnand', 'Ok, I will wait for you', 1);
+INSERT INTO Email VALUES (email_sequence.nextval, 'siddharthnand', 'michaelperkins', 'Email test message.', 2);
+INSERT INTO Email VALUES (email_sequence.nextval, 'siddharthnand', 'saifkarnawi', 'Your late for work!', 3);
+INSERT INTO Email VALUES (email_sequence.nextval, 'siddharthnand', 'saifkarnawi', 'Nice to meet you', 3);
+INSERT INTO Email VALUES (email_sequence.nextval, 'siddharthnand', 'michaelperkins', 'Email test message 2', 2);
+INSERT INTO Email VALUES (email_sequence.nextval, 'siddharthnand', 'michaelperkins', 'Congrats on your job offer!', 2);
+INSERT INTO Email VALUES (email_sequence.nextval, 'saifkarnawi', 'siddharthnand', 'Your late again', 1);
+INSERT INTO Email VALUES (email_sequence.nextval, 'saifkarnawi', 'siddharthnand', 'Where are the keys!?', 1);
+
+INSERT INTO Contact VALUES ('siddharthnand@gmail.com', 'Siddharth', 'Nand');
+INSERT INTO Contact VALUES ('michaelperkins@gmail.com', 'Michael', 'Perkins');
+INSERT INTO Contact VALUES ('saifkarnawi@mail.com', 'Saif', 'Karnawi');
+INSERT INTO Contact VALUES ('nand_s@yahoo.com', 'Siddharth', 'Nand');
+INSERT INTO Contact VALUES ('jennifersmith@mail.com', 'Jennifer', 'Smith');
+INSERT INTO Contact VALUES ('admin@ubc.ca', 'UBC', 'Admin');
 
 INSERT INTO Attachment VALUES ('attachment1', 1, 'pdf');
 INSERT INTO Attachment VALUES ('attachment2', 2, 'doc');
@@ -181,15 +228,18 @@ INSERT INTO Attachment VALUES ('attachment3', 3, 'html');
 INSERT INTO Attachment VALUES ('attachment4', 4, 'zip');
 INSERT INTO Attachment VALUES ('attachment5', 5, 'pdf');
 
-INSERT INTO Contact VALUES ('siddharthnand@mail.com', 'Siddharth', 'Nand');
-INSERT INTO Contact VALUES ('michaelperkins@mail.com', 'Michael', 'Perkins');
-INSERT INTO Contact VALUES ('saifkarnawi@mail.com', 'Saif', 'Karnawi');
-INSERT INTO Contact VALUES ('nand_s@gmail.com', 'Siddharth', 'Nand');
-INSERT INTO Contact VALUES ('jennifersmith@mail.com', 'Jennifer', 'Smith');
-INSERT INTO Contact VALUES ('admin@ubc.ca', 'UBC', 'Admin');
-
-INSERT INTO UserContacts VALUES (1, 7786652266, 'michaelperkins@mail.com');
-INSERT INTO UserContacts VALUES (2, 7786652266, 'saifkarnawi@mail.com');
-INSERT INTO UserContacts VALUES (3, 7786652266, 'nand_s@gmail.com');
-INSERT INTO UserContacts VALUES (4, 3441128899, 'admin@ubc.ca');
-INSERT INTO UserContacts VALUES (5, 3441128899, 'jennifersmith@mail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 7786652266, 'michaelperkins@mail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 7786652266, 'saifkarnawi@mail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 7786652266, 'nand_s@gmail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 7786652266, 'admin@ubc.ca');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 7786652266, 'jennifersmith@mail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 4432348866, 'michaelperkins@mail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 4432348866, 'saifkarnawi@mail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 4432348866, 'nand_s@gmail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 4432348866, 'admin@ubc.ca');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 3441128899, 'jennifersmith@mail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 3441128899, 'michaelperkins@mail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 3441128899, 'saifkarnawi@mail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 3441128899, 'nand_s@gmail.com');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 3441128899, 'admin@ubc.ca');
+INSERT INTO UserContacts VALUES (userContact_sequence.nextval, 3441128899, 'jennifersmith@mail.com');
