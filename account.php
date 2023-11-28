@@ -22,8 +22,8 @@
 
     setAdminInfo($conn, $_SESSION['adminsNumber']);
     
-    // Uncomment to reset mailboxes
-    // clearMailboxes($conn);
+    // Uncomment to reset mailboxes for user
+    // clearMailboxes($conn, $_SESSION['username']);
     
     if (isset($_SESSION['userLoggedIn'])) {
         if (isset($_POST["logout"])) {
@@ -38,6 +38,96 @@
         $container = "select";
         $conn = connect_to_oracle();
         $mailboxes = get_mailboxes($conn);
+        $displayCount = false;
+    }
+
+    if (isset($_POST['move_emails']) || isset($_POST['move_emails_submit'])) {
+        $container = "move";
+        $conn = connect_to_oracle();
+        $mailboxes = get_mailboxes($conn);
+    }
+
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['move_emails_submit'])) {
+        
+        $mailboxID1 = $_SESSION[$_POST["selected_mailbox1"]];
+        $mailboxID2 = $_SESSION[$_POST["selected_mailbox2"]];
+        $conn = connect_to_oracle();
+
+        if($mailboxID1 == $mailboxID2) {
+            $error_message = "Cannot move emails to the same mailbox.";
+        }
+        else {
+            $result = moveEmails($conn, $mailboxID1, $mailboxID2);
+            if (!$result) {
+                $error_message = "Error Moving Emails";
+            } else {
+                $success_message = "Successfully Moved Emails!";
+            }
+            oci_close($conn);
+        }
+
+    }
+
+    if (isset($_POST['create_custom_mailbox']) || isset($_POST['create_custom_mailbox_submit'])) {
+        $container = "create";
+    }
+
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_custom_mailbox_submit'])) {
+        $conn = connect_to_oracle();
+        $customLabel = $_POST["custom_mailbox_label"];
+        $customMailbox = get_custom_mailbox($conn, $customLabel);
+
+        if ($customMailbox) {
+            $error_message = "Mailbox with selected name already exists. Please enter a new name.";
+        } else {
+            $result = insert_custom_mailbox($conn, $customLabel); 
+            if (!$result) {
+                $error_message = "Error creating mailbox.";
+            } else {
+                $success_message = "Success! Mailbox has been created.";
+            }
+        }
+        oci_close($conn);
+    }
+
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['select_mailbox_get_status'])) {
+        $container = "select";
+        $conn = connect_to_oracle();
+        $mailboxes = get_mailboxes($conn);
+        $mailboxName = $_POST['selected_mailbox'];
+        $_SESSION['mailbox'] = $_POST['selected_mailbox'];
+
+        $result = get_mailbox_status($conn, $mailboxName);
+        if (!$result) {
+            $error_message = "Error getting status.";
+        } else {
+            $success_message = $result;
+        }
+
+    }
+
+    if (isset($_POST['delete_custom_mailbox']) || isset($_POST['delete_custom_mailbox_submit'])) {
+        $container = "delete";
+        $conn = connect_to_oracle();
+        $mailboxes = get_mailboxes($conn);
+    }
+
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_custom_mailbox_submit'])) {
+        $conn = connect_to_oracle();
+        $customLabel = $_POST["deleted_mailbox"];
+
+        if($customLabel == 'General') {
+            $error_message_delete = "Cannot delete General Mailbox";
+        } else {
+            $deleted = delete_custom_mailbox($conn, $customLabel);
+            if (!$deleted) {
+                $error_message_delete = "Error deleting the account.";
+            } else {
+                $success_message_delete = "Success! Account has been deleted.";
+                $mailboxes = get_mailboxes($conn);
+            }
+        }
+        oci_close($conn);
     }
 
     if (isset($_POST['Back'])) {
@@ -49,16 +139,193 @@
         $popup = "admin";
     }
 
+    if (isset($_POST['check_mailbox_status'])) {
+        
+        $conn = connect_to_oracle();
+
+        $query = "SELECT mailboxID
+        FROM Email
+        WHERE recipient = :username
+        GROUP BY mailboxID
+        HAVING COUNT(emailID) > 0";
+
+        $stmt = oci_parse($conn, $query);
+
+        $username = $_SESSION['username'];
+        oci_bind_by_name($stmt, ":username", $username);
+
+        $result = oci_execute($stmt);
+
+        if (!$result) {
+            $error = oci_error($stmt);
+            oci_close($conn);
+            echo "<script>"
+            . "console.log('Error: " . htmlentities($error['message']) . "')"
+            . "</script>";
+            return false;
+        }
+
+        while ($row = oci_fetch_assoc($stmt)) {
+            $IDArray[] = $row['MAILBOXID']; 
+        }
+        
+        $popup = "status";
+    }
+
     if(isset($_POST['select_mailbox_submit'])) {
         $_SESSION['mailbox'] = $_POST['selected_mailbox'];
         $_SESSION['mailboxID'] = $_SESSION[$_SESSION['mailbox']];
         header('Location: mailbox.php');
     }
 
-    function get_mailboxes($conn) {
-        $query = "SELECT * FROM Mailbox WHERE ownersUsername = :username ORDER BY mailboxID";
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['get_email_count'])) {
+
+        $container = "select";
+        $conn = connect_to_oracle();
+        $mailboxes = get_mailboxes($conn);
+
+        $selectedMailbox = $_POST['selected_mailbox'];
+        $emailCount = get_email_count($selectedMailbox);
+        $displayCount = true;
+
+    }
+
+    function moveEmails($conn, $mailboxID1, $mailboxID2) {
+
+        $query = "UPDATE Email
+        SET Email.mailboxID = :newMailboxID
+        WHERE Email.mailboxID = :currentMailboxID";
+        
         $stmt = oci_parse($conn, $query);
-        oci_bind_by_name($stmt, ":username", $_SESSION['username']);
+        oci_bind_by_name($stmt, ":currentMailboxID", $mailboxID1);
+        oci_bind_by_name($stmt, ":newMailboxID", $mailboxID2);
+
+        $result = oci_execute($stmt);
+
+        if (!$result) {
+            $error = oci_error($stmt);
+            oci_close($conn);
+            echo "<script>"
+            . "console.log('Error: " . htmlentities($error['message']) . "')"
+            . "</script>";
+            return false;
+        }
+
+        return true;
+
+    }
+
+    function delete_custom_mailbox($conn, $customLabel) {
+        
+        $customMailbox = get_custom_mailbox($conn, $customLabel);
+
+        $mailboxID = $customMailbox['MAILBOXID'];
+
+        $query = "DELETE FROM CustomMailbox WHERE mailboxID = :mailboxID";
+
+        $stmt = oci_parse($conn, $query);
+        oci_bind_by_name($stmt, ":mailboxID", $mailboxID);
+
+        $result = oci_execute($stmt);
+
+        if (!$result) {
+            $error = oci_error($stmt);
+            oci_close($conn);
+            echo "<script>"
+            . "console.log('Error: " . htmlentities($error['message']) . "')"
+            . "</script>";
+            return false;
+        }
+
+        $query = "DELETE FROM Mailbox WHERE mailboxID = :mailboxID";
+        $stmt = oci_parse($conn, $query);
+
+        oci_bind_by_name($stmt, ":mailboxID", $mailboxID);
+
+        $result = oci_execute($stmt);
+        if (!$result) {
+            $error = oci_error($stmt);
+            oci_close($conn);
+            echo "<script>"
+                . "console.log('2Error: " . htmlentities($error['message']) . "')"
+                . "</script>";
+            return false;
+        }
+
+        return true;
+    }
+
+    function get_custom_mailbox($conn, $customLabel) {
+        $query = "SELECT * FROM CustomMailbox WHERE customLabel = :customLabel AND ownersUsername = :ownersUsername";
+        $stmt = oci_parse($conn, $query);
+
+        oci_bind_by_name($stmt, ":customLabel", $customLabel);
+        oci_bind_by_name($stmt, ":ownersUsername", $_SESSION['username']);
+
+        $result = oci_execute($stmt);
+        if (!$result) {
+            oci_close($conn);
+            echo "<script>"
+            . "console.log('get_custom_mailbox_error!')"
+            . "</script>";
+            return false;
+        }
+
+        $row = oci_fetch_assoc($stmt);
+
+        return $row;
+    }
+
+    function insert_custom_mailbox($conn, $customLabel) {
+        
+        for($i = 0; $i < 10000; $i++) {
+            if(!mailboxExists($conn, $i)) {
+                $mailboxID = $i;
+                break;
+            }
+        }
+        $ownersUsername = $_SESSION['username'];
+        $currentDate = new DateTime();
+        $formattedDate = $currentDate->format("Y-m-d");
+
+        $query = "INSERT INTO CustomMailbox VALUES (:mailboxID, :ownersUsername, TO_DATE(:currentDate, 'YYYY-MM-DD'), :customLabel)";
+        $stmt = oci_parse($conn, $query);
+
+        oci_bind_by_name($stmt, ":mailboxID", $mailboxID);
+        oci_bind_by_name($stmt, ":ownersUsername", $ownersUsername);
+        oci_bind_by_name($stmt, ":currentDate", $formattedDate);
+        oci_bind_by_name($stmt, ":customLabel", $customLabel);
+
+        $result = oci_execute($stmt);
+        if (!$result) {
+            $error = oci_error($stmt);
+            oci_close($conn);
+            echo "<script>"
+                . "console.log('Error: " . htmlentities($error['message']) . "')"
+                . "</script>";
+            return false;
+        }
+        // Insert into mailbox
+        $query = "INSERT INTO Mailbox VALUES (:mailboxID, :ownersUsername)";
+        $stmt = oci_parse($conn, $query);
+        oci_bind_by_name($stmt, ":mailboxID", $mailboxID);
+        oci_bind_by_name($stmt, ":ownersUsername", $ownersUsername);
+
+        $result = oci_execute($stmt);
+        if (!$result) {
+            $error_message = "2Oracle Execute Error " . oci_error($stmt)['message'];
+            echo "Error message: " . $error_message;
+            oci_close($conn);
+            return false;
+        }
+
+        return true;
+    }
+
+    function getLabel($conn,$value) {
+        $query = "SELECT customLabel FROM CustomMailbox WHERE mailboxID = :mailboxID";
+        $stmt = oci_parse($conn, $query);
+        oci_bind_by_name($stmt, ":mailboxID", $value);
 
         $result = oci_execute($stmt);
         if (!$result) {
@@ -68,18 +335,52 @@
             . "</script>";
             return false;
         }
+
+        $row = oci_fetch_assoc($stmt);
+        $label = $row['CUSTOMLABEL'];
+
+        return $label;
+    }
+
+    function get_mailboxes($conn) {
+        $query = "SELECT mailboxID FROM Mailbox WHERE ownersUsername = :username UNION
+        SELECT mailboxID FROM CustomMailbox WHERE ownersUsername = :username ORDER BY mailboxID";
+        $stmt = oci_parse($conn, $query);
+        oci_bind_by_name($stmt, ":username", $_SESSION['username']);
+
+        $result = oci_execute($stmt);
+        if (!$result) {
+            $error = oci_error($stmt);
+            oci_close($conn);
+            echo "<script>"
+                . "console.log('Error: " . htmlentities($error['message']) . "')"
+                . "</script>";
+            return false;
+        }
     
         $mailboxes = array();
         while ($row = oci_fetch_assoc($stmt)) {
             $mailboxes[] = $row;
         }
 
+        $i = 0;
         foreach ($mailboxes as $mailbox) {
             foreach ($mailbox as $key => $value) {
                 //echo $key . ": " . $value . "<br>";
                 if($key == "MAILBOXID") {
-                    $_SESSION[$value] = "General";
-                    $_SESSION["General"] = $value;
+                    if($i == 0) {
+                        $_SESSION[$value] = "General";
+                        $_SESSION["General"] = $value;
+                        $i = $i + 1;
+                    } else {
+                        $customLabel = getLabel($conn,$value);
+                        if (!$customLabel) {
+                            oci_close($conn);
+                            return false;
+                        }
+                        $_SESSION[$value] = $customLabel;
+                        $_SESSION[$customLabel] = $value;
+                    }
                 }
             }
             //echo "------------------<br>"; // Separator for better readability
@@ -96,7 +397,8 @@
 
     function mailboxExists($conn, $desiredMailboxID) {
 
-        $query = "SELECT * FROM Mailbox WHERE mailboxID = :desiredMailboxID";
+        $query = "SELECT mailboxID FROM Mailbox WHERE mailboxID = :desiredMailboxID UNION ALL
+        SELECT mailboxID FROM CustomMailbox WHERE mailboxID = :desiredMailboxID";
         $statement = oci_parse($conn, $query);
 
         oci_bind_by_name($statement, ":desiredMailboxID", $desiredMailboxID);
@@ -116,6 +418,7 @@
         } else {
             return false;
         }
+
     }
 
     function initMailbox($conn, $ID) {
@@ -155,11 +458,30 @@
         }
     }
 
-    function clearMailboxes($conn) {
-        $query = "DELETE FROM Mailbox";
+    function clearMailboxes($conn, $username) {
+        $query = "DELETE FROM CustomMailbox WHERE ownersUsername = :ownersUsername";
 
         // Prepare the SQL statement
         $stmt = oci_parse($conn, $query);
+
+        oci_bind_by_name($stmt, ":ownersUsername", $username);
+
+        // Execute the statement
+        $result = oci_execute($stmt);
+
+        if (!$result) {
+            $error_message = "Oracle Execute Error " . oci_error($stmt)['message'];
+            echo "Error message: " . $error_message;
+            oci_close($conn);
+            return false;
+        }
+
+        $query = "DELETE FROM Mailbox WHERE ownersUsername = :ownersUsername";
+
+        // Prepare the SQL statement
+        $stmt = oci_parse($conn, $query);
+
+        oci_bind_by_name($stmt, ":ownersUsername", $username);
 
         // Execute the statement
         $result = oci_execute($stmt);
@@ -209,6 +531,50 @@
 
         return true;
     }
+
+    function get_email_count($label) {
+
+        if($label == 'General') {
+            $mailboxID = (int) $_SESSION[$label];
+            $query = "SELECT COUNT(*) FROM Email WHERE mailboxID = $mailboxID";
+        } else {
+            $query = "SELECT COUNT(*) FROM CustomMailbox
+            JOIN Email ON CustomMailbox.mailboxID = Email.mailboxID
+            WHERE customLabel = :label";
+        }
+        $conn = connect_to_oracle();
+
+        $stmt = oci_parse($conn, $query);
+
+        oci_bind_by_name($stmt, ":label", $label);
+        
+        if (!$stmt) {
+            $error = oci_error($stmt);
+            oci_close($conn);
+            echo "<script>"
+                . "console.log('1Error: " . htmlentities($error['message']) . "')"
+                . "</script>";
+            return false;
+        }
+
+        $result = oci_execute($stmt);
+
+        if (!$result) {
+            $error = oci_error($stmt);
+            oci_close($conn);
+            echo "<script>"
+                . "console.log('2Error: " . htmlentities($error['message']) . "')"
+                . "</script>";
+            return false;
+        }
+
+        $row = oci_fetch_assoc($stmt);
+
+        $displayCount = true;
+        return $row['COUNT(*)'];
+
+    }
+
 ?>
 
 <div class="container">
@@ -221,6 +587,10 @@
     </button>
 </form>
 
+<form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+    <button type="submit" class="btn btn-primary" name="check_mailbox_status" style="position: fixed; top: 10px; right: 150px;">Check Mailbox Status</button>
+</form>
+
 <div class="container">
     <?php if (isset($_SESSION['userLoggedIn'])): ?>
     <div class="card mb-3">
@@ -229,6 +599,16 @@
             <div class="d-flex gap-4 pt-3">
                 <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
                     <button type="submit" class="btn btn-primary" name="view_mailbox">View Mailboxes</button>
+                </form>
+
+                <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+                    <button type="submit" class="btn btn-primary" name="create_custom_mailbox">Create Mailbox</button>
+                </form>
+                <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+                    <button type="submit" class="btn btn-primary" name="delete_custom_mailbox">Delete Mailbox</button>
+                </form>
+                <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+                    <button type="submit" class="btn btn-primary" name="move_emails">Move Emails</button>
                 </form>
 
                 <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post" class="form-group ms-auto">
@@ -253,10 +633,169 @@
             <div class="card-body d-flex flex-column">
                 <h2 class="card-title mb-3">Select Mailbox</h2>';
 
+        if ($error_message != "") {
+            echo "<div class='alert alert-danger' role='alert'>"
+                . $error_message
+                . "</div>";
+            }
+        
+        if ($success_message != "") {
+            echo "<div class='alert alert-success' role='alert'>"
+                . $success_message
+                . "</div>";
+        }
+
+        echo '<form action="' . $_SERVER['PHP_SELF'] . '" method="post" class="row g-2">';
+        
+        echo '<div class="d-flex gap-4 pt-3">';
+        echo '<select name="selected_mailbox" class="form-select" style="width: 500px;>';
+
+        echo '<option value="' . "General" . '">';
+        echo "General";
+        echo '</option>';
+        
+        foreach ($mailboxes as $mailbox) {
+            foreach ($mailbox as $key => $value) {
+                if($key == "MAILBOXID") {
+                    echo '<option value="' . $_SESSION[$value] . '">';
+                    echo $_SESSION[$value];
+                    echo '</option>';
+                }
+            }
+        }
+        
+        echo '</select>';
+        if($displayCount) {
+            echo $emailCount;
+            if($emailCount == 1) {
+                echo " email in ";
+            } else {
+                echo " emails in ";
+            }
+            echo $selectedMailbox;
+        }
+        echo '<label>&nbsp;</label>';
+        echo '<input type="submit" name="select_mailbox_submit" value="Select Mailbox" class="btn btn-primary btn-block">';
+        echo '<input type="submit" name="get_email_count" value="Get Email Count" class="btn btn-primary btn-block">';
+        echo '</div>';
+        
+        echo '</form>';
+        echo '</div></div>';
+    }
+
+    if ($container == "move") {
+        echo '<div class="card mb-3">
+            <div class="card-body d-flex flex-column">
+                <h2 class="card-title mb-3">Move Emails</h2>';
+
+        if ($error_message != "") {
+            echo "<div class='alert alert-danger' role='alert'>"
+                . $error_message
+                . "</div>";
+            }
+        
+        if ($success_message != "") {
+            echo "<div class='alert alert-success' role='alert'>"
+                . $success_message
+                . "</div>";
+        }
+
+        echo '<form action="' . $_SERVER['PHP_SELF'] . '" method="post" class="row g-2">';
+        
+        echo '<div class="d-flex gap-4 pt-3">';
+        echo 'Move All Emails From ';
+        echo '<select name="selected_mailbox1" class="form-select" style="width: 250px;">';
+        
+        foreach ($mailboxes as $mailbox) {
+            foreach ($mailbox as $key => $value) {
+                if($key == "MAILBOXID") {
+                    echo '<option value="' . $_SESSION[$value] . '">';
+                    echo $_SESSION[$value];
+                    echo '</option>';
+                }
+            }
+        }
+        
+        echo '</select>';
+        echo ' to ';
+        echo '<select name="selected_mailbox2" class="form-select" style="width: 250px;>';
+        
+        echo '<option value="' . "General" . '">';
+        echo "General";
+        echo '</option>';
+        
+        foreach ($mailboxes as $mailbox) {
+            foreach ($mailbox as $key => $value) {
+                if($key == "MAILBOXID") {
+                    echo '<option value="' . $_SESSION[$value] . '">';
+                    echo $_SESSION[$value];
+                    echo '</option>';
+                }
+            }
+        }
+        
+        echo '</select>';
+
+        echo '<label>&nbsp;</label>';
+        echo '<input type="submit" name="move_emails_submit" value="Move" class="btn btn-primary btn-block">';
+        echo '</div>';
+        
+        echo '</form>';
+        echo '</div></div>';
+    }
+    
+    if ($container == "create") {
+        echo '<div class="card mb-3">
+            <div class="card-body d-flex flex-column">
+                <h2 class="card-title mb-3">Add Custom Mailbox</h2>';
+
+        if ($error_message != "") {
+            echo "<div class='alert alert-danger' role='alert'>"
+                . $error_message
+                . "</div>";
+        }
+
+        if ($success_message != "") {
+            echo "<div class='alert alert-success' role='alert'>"
+                . $success_message
+                . "</div>";
+        }
+
+        echo '<form action="' . $_SERVER['PHP_SELF'] . '" method="post">
+                <div class="row">
+                    <div class="col">
+                        <input type="custom_mailbox_label" name="custom_mailbox_label" class="form-control" id="custom_mailbox_label" placeholder="Mailbox Label" required>
+                    </div>
+                    <div class="col">
+                        <input type="submit" name="create_custom_mailbox_submit" class="btn btn-success" value="Create Mailbox">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>';
+    }
+
+    if ($container == "delete") {
+        echo '<div class="card mb-3">
+            <div class="card-body d-flex flex-column">
+                <h2 class="card-title mb-3">Delete a Custom Mailbox</h2>';
+        
+        if ($error_message_delete != "") {
+            echo "<div class='alert alert-danger' role='alert'>"
+                . $error_message_delete
+                . "</div>";
+        }
+
+        if ($success_message_delete != "") {
+            echo "<div class='alert alert-success' role='alert'>"
+                . $success_message_delete
+                . "</div>";
+        }
+
         echo '<form action="' . $_SERVER['PHP_SELF'] . '" method="post" class="row g-2">';
         
         echo '<div class="col-md-8">';
-        echo '<select name="selected_mailbox" class="form-select">';
+        echo '<select name="deleted_mailbox" class="form-select">';
         
         foreach ($mailboxes as $mailbox) {
             foreach ($mailbox as $key => $value) {
@@ -274,13 +813,14 @@
         echo '<div class="col-md-4">';
         echo '<label>&nbsp;</label>';
         echo '<form action="' . $_SERVER['PHP_SELF'] . '" method="post">';
-        echo '<input type="submit" name="select_mailbox_submit" value="Select Mailbox" class="btn btn-primary btn-block">';
+        echo '<input type="submit" name="delete_custom_mailbox_submit" value="Delete Mailbox" class="btn btn-danger btn-block">';
         echo '</form>';
         echo '</div>';
         
         echo '</form>';
         echo '</div></div>';
-    } 
+    }
+
     ?>
 
 
@@ -304,6 +844,36 @@
         echo $_SESSION['support_team_city'];
         echo ', ';
         echo $_SESSION['support_team_country'];
+        echo '</p>';
+        echo '</div>';
+
+        // Trigger the adminPopup using JavaScript
+        echo '<script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("adminPopup").style.display = "block";
+        });
+
+        function closeAdminPopup() {
+            document.getElementById("adminPopup").style.display = "none";
+        }
+        </script>';
+    }
+    if ($popup == "status") {
+        // Display a pop-up for the "admin" container
+
+        echo '<div id="adminPopup" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 40px; background-color: #fff; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); z-index: 1000;">
+        <span onclick="closeAdminPopup()" style="position: absolute; top: 10px; right: 10px; cursor: pointer;">X</span>
+        <p>';
+        if($IDArray == NULL) {
+            echo 'No Mailboxes Currently in Use';
+        } else {
+            echo 'Mailboxes Currently in Use:';
+            echo '<br>';
+            foreach($IDArray as $ID) {
+                echo '<br>';
+                echo $_SESSION[$ID];
+            }
+        }
         echo '</p>';
         echo '</div>';
 
