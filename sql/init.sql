@@ -10,8 +10,6 @@ drop table CONTACT cascade constraints;
 drop table USERCONTACTS cascade constraints;
 
 DROP SEQUENCE email_sequence;
-DROP SEQUENCE mailbox_sequence;
-DROP SEQUENCE custom_mailbox_sequence;
 DROP SEQUENCE userContact_sequence;
 
 
@@ -139,18 +137,6 @@ CREATE SEQUENCE email_sequence
     NOCACHE
     NOCYCLE;
 
-CREATE SEQUENCE mailbox_sequence
-    START WITH 1
-    INCREMENT BY 1
-    NOCACHE
-    NOCYCLE;
-
-CREATE SEQUENCE custom_mailbox_sequence
-    START WITH 1
-    INCREMENT BY 1
-    NOCACHE
-    NOCYCLE;
-
 CREATE SEQUENCE userContact_sequence
     START WITH 1
     INCREMENT BY 1
@@ -185,19 +171,19 @@ INSERT INTO Account VALUES ('jennifersmith', TO_DATE('2019-01-01', 'YYYY-MM-DD')
 INSERT INTO Account VALUES ('lorahill', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 6668882222, 1014);
 INSERT INTO Account VALUES ('k_smith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 6668882222, 1014);
 
-INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'siddharthnand');
-INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'michaelperkins');
-INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'saifkarnawi');
-INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'jennifersmith');
-INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'lorahill');
-INSERT INTO Mailbox VALUES (mailbox_sequence.nextval, 'k_smith');
+INSERT INTO Mailbox VALUES (1, 'siddharthnand');
+INSERT INTO Mailbox VALUES (2, 'michaelperkins');
+INSERT INTO Mailbox VALUES (3, 'saifkarnawi');
+INSERT INTO Mailbox VALUES (4, 'jennifersmith');
+INSERT INTO Mailbox VALUES (5, 'lorahill');
+INSERT INTO Mailbox VALUES (6, 'k_smith');
 
-INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'siddharthnand', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Important');
-INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'michaelperkins', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Work');
-INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'saifkarnawi', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Family');
-INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'jennifersmith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Friends');
-INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'lorahill', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Important');
-INSERT INTO CustomMailbox VALUES (custom_mailbox_sequence.nextval, 'k_smith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Junk');
+INSERT INTO CustomMailbox VALUES (7, 'siddharthnand', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Important');
+INSERT INTO CustomMailbox VALUES (8, 'michaelperkins', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Work');
+INSERT INTO CustomMailbox VALUES (9, 'saifkarnawi', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Family');
+INSERT INTO CustomMailbox VALUES (10, 'jennifersmith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Friends');
+INSERT INTO CustomMailbox VALUES (11, 'lorahill', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Important');
+INSERT INTO CustomMailbox VALUES (12, 'k_smith', TO_DATE('2019-01-01', 'YYYY-MM-DD'), 'Junk');
 
 INSERT INTO Email VALUES (email_sequence.nextval, 'siddharthnand', 'michaelperkins', 'Hello, how are you?', 2);
 INSERT INTO Email VALUES (email_sequence.nextval, 'michaelperkins', 'siddharthnand', 'I am good, how are you?', 1);
