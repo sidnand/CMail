@@ -143,6 +143,42 @@
         oci_close($conn);
     }
 
+    if (isset($_POST["division"])) {
+        $division = true;
+        //using second method
+        $query = "SELECT U.phoneNumber, U.firstName, U.lastName
+        FROM  \"User\"  U
+        WHERE NOT EXISTS (
+            SELECT C.emailAddress
+            FROM Contact C
+            WHERE NOT EXISTS (
+                SELECT UC.usersPhoneNumber
+                FROM UserContacts UC
+                WHERE UC.contactsEmailAddress = C.emailAddress
+                AND UC.usersPhoneNumber = U.phoneNumber
+            )
+        )";
+
+        $conn = connect_to_oracle();
+        $stmt = oci_parse($conn, $query);
+        $result = oci_execute($stmt);
+
+        if ($result) {
+            $row_count = oci_fetch_all($stmt, $res);
+
+            if ($row_count) {
+                $divisionQueryResult = "The number of users who have added all contacts is: $row_count";
+            } else {
+                $divisionQueryResult = "Currently, there are no users who have every contact added!";
+            }
+            
+        } 
+
+        oci_close($conn);
+    }
+    
+    
+
     if (isset($_POST['view_average_contacts'])) {
         $average_contacts_clicked = true;
 
@@ -633,6 +669,21 @@
 
         if ($average_contacts_clicked != "") {
             echo "<div class='alert alert-warning mt-3 ' role='alert'>The most amount of contacts a user has is: $contactCount</div>";
+        } 
+
+    ?>
+
+</div>
+
+<div class="container mt-3">
+    <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+        <button type="submit" class="btn btn-primary" name="division">Number of Users Who Have All Contacts Added</button>
+    </form>
+
+    <?php
+
+        if ($division != "") {
+            echo "<div class='alert alert-warning mt-3 ' role='alert'>$divisionQueryResult</div>";
         } 
 
     ?>
