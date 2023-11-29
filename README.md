@@ -5,7 +5,9 @@ Our project is a database for an email service. Our database holds all the infor
 ## Demo Links
 
 https://www.students.cs.ubc.ca/~sfkrnwi/CPSC-304
+
 https://www.students.cs.ubc.ca/~sidnand/CPSC-304
+
 https://www.students.cs.ubc.ca/~mperki02/CPSC-304
 
 ## Login Accounts
