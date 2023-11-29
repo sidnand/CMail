@@ -79,7 +79,7 @@
                 "contains" => "LIKE ",
                 "and" => "AND ",
                 "or" => "OR ",
-                "=" => "",
+                "is" => "",
             ];
 
             $prev_token_contains = false;
@@ -378,7 +378,7 @@
                 </div>
                 <br>
                 <div style="display: inline-block">
-                    <button type="button" class="btn btn-success" onclick="updateOperator('sender = ', true)">sender</button>
+                    <button type="button" class="btn btn-success" onclick="updateOperator('sender is', true)">sender</button>
                     <button type="button" class="btn btn-success" onclick="updateOperator('body contains', true)">body contains</button>
                     <button type="button" class="btn btn-info" onclick="updateOperator('or')">or</button>
                     <button type="button" class="btn btn-info" onclick="updateOperator('and')">and</button>
