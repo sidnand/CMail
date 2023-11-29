@@ -143,6 +143,26 @@
         oci_close($conn);
     }
 
+    if (isset($_POST['view_average_contacts'])) {
+        $average_contacts_clicked = true;
+
+        $query = "SELECT COUNT(*) AS contact_count
+        FROM UserContacts
+        GROUP BY usersPhoneNumber
+        HAVING COUNT(*) >= ALL (
+            SELECT COUNT(*) AS cnt
+            FROM UserContacts
+            GROUP BY usersPhoneNumber
+        )";
+
+        $conn = connect_to_oracle();
+        $stmt = oci_parse($conn, $query);
+        $result = oci_execute($stmt);
+
+        $row = oci_fetch_assoc($stmt);
+        $contactCount = $row['CONTACT_COUNT'];         
+    }
+
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_contact_submit'])) {
         $secondContainer = "delete";
         $conn = connect_to_oracle();
@@ -604,6 +624,20 @@
     <?php endif; ?>
 </div>
 
+<div class="container">
+    <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+        <button type="submit" class="btn btn-primary" name="view_average_contacts">View Average Contacts Per User</button>
+    </form>
+
+    <?php
+
+        if ($average_contacts_clicked != "") {
+            echo "<div class='alert alert-warning mt-3 ' role='alert'>The most amount of contacts a user has is: $contactCount</div>";
+        } 
+
+    ?>
+
+</div>
 
 
 <div class="logo">
