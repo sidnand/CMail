@@ -590,20 +590,36 @@
         $query = "SELECT mailboxID, COUNT(*) as EMAIL_COUNT FROM Email WHERE recipient = '$username' GROUP BY mailboxID ORDER BY mailboxID";
         $stmt = oci_parse($conn, $query);
 
+        if (!$stmt) {
+            // Handle parse error
+            $error = oci_error($stmt);
+            echo "<script>"
+                . "console.log('Parse Error: " . htmlentities($error['message']) . "');"
+                . "console.log('Parse Error Code: " . htmlentities($error['code']) . "');"
+                . "</script>";
+            oci_close($conn);
+            return false;
+        }
+
+        // Bind the parameter
+        oci_bind_by_name($stmt, ":username", $username);
+
         $result = oci_execute($stmt);
         if (!$result) {
             oci_close($conn);
             echo "<script>"
-            . "console.log('Result = false!')"
-            . "</script>";
+                . "console.log('SQL Error: " . htmlentities($error['message']) . "');"
+                . "console.log('SQL Error Code: " . htmlentities($error['code']) . "');"
+                . "console.log('SQL Error Array: " . htmlentities(var_export($error, true)) . "');"
+                . "</script>";
             return false;
         }
 
         $rows = array();
 
+        // Fetch rows as associative arrays
         while ($row = oci_fetch_assoc($stmt)) {
             $rows[] = $row;
-            echo $row['EMAIL_COUNT'];
         }
 
         return $rows;
@@ -619,9 +635,13 @@
         $mailboxID = $_SESSION[$label];
 
         if($label == 'General') {
-            $count = $all[0]['EMAIL_COUNT'];
+            if ($all[0]['MAILBOXID'] == $mailboxID) {
+                $count = $all[0]['EMAIL_COUNT'];
+            } else {
+                $count = 0;
+            }
         } else {
-            $query = "SELECT mailboxID from Mailbox WHERE customLabel = :label";
+            $query = "SELECT mailboxID from customMailbox WHERE customLabel = :label";
 
             $stmt = oci_parse($conn, $query);
 
@@ -660,14 +680,6 @@
                 }
             }
         }
-
-        // if($label == 'General') {
-        //     $count = $row['COUNT(*)'][0];
-        // } else {
-        //     $query = "SELECT COUNT(*) FROM CustomMailbox
-        //     JOIN Email ON CustomMailbox.mailboxID = Email.mailboxID
-        //     WHERE customLabel = :label";
-        // }
 
         $displayCount = true;
         return $count;
