@@ -115,21 +115,29 @@
 
             $mailboxID = get_mailbox_id($conn, $recipient);
 
-            if ($attachment['name'] != "") {
-                $full_name = $attachment["name"];
-                $ext = end((explode(".", $full_name)));
-                $name = pathinfo($full_name, PATHINFO_FILENAME);
+            $full_name = $attachment["name"];
+            $ext = end((explode(".", $full_name)));
+            $name = pathinfo($full_name, PATHINFO_FILENAME);
 
+            if ($attachment['name'] != "") {
                 $query = "
                     INSERT ALL
-                        INTO Email VALUES (email_sequence.nextval, '$sender', '$recipient', '$body', $mailboxID)
-                        INTO Attachment VALUES ('$name', email_sequence.currval, '$ext')
+                        INTO Email VALUES (email_sequence.nextval, :sender, :recipient, :body, :mailboxID)
+                        INTO Attachment VALUES (:name, email_sequence.currval, :ext)
                     SELECT * FROM dual";
+
             } else {
-                $query = "INSERT INTO Email VALUES (email_sequence.nextval, '$sender', '$recipient', '$body', $mailboxID)";
+                $query = "INSERT INTO Email VALUES (email_sequence.nextval, :sender, :recipient, :body, :mailboxID)";
             }
 
             $stmt = oci_parse($conn, $query);
+            oci_bind_by_name($stmt, ":sender", $sender);
+            oci_bind_by_name($stmt, ":recipient", $recipient);
+            oci_bind_by_name($stmt, ":body", $body);
+            oci_bind_by_name($stmt, ":mailboxID", $mailboxID);
+            oci_bind_by_name($stmt, ":name", $name);
+            oci_bind_by_name($stmt, ":ext", $ext);
+            
 
             if (!$stmt) {
                 $error_message = "Oracle Parse Error " . OCIError($conn)['message'];
@@ -178,9 +186,11 @@
         }
 
         function get_mailbox_id($conn, $username) {
-            $query = "SELECT mailboxID FROM Mailbox WHERE ownersUsername = '$username' 
+            $query = "SELECT mailboxID FROM Mailbox WHERE ownersUsername = :username 
             ORDER BY mailboxID";
             $stmt = oci_parse($conn, $query);
+
+            oci_bind_by_name($stmt, ":username", $username);
 
             if (!$stmt) {
                 $error_message = "Oracle Parse Error " . OCIError($conn)['message'];
@@ -211,9 +221,10 @@
                 global $email_query;
                 $query = $email_query;
             } else {
-                $query = "SELECT * FROM Email WHERE mailboxID = $mailboxID";
+                $query = "SELECT * FROM Email WHERE mailboxID = :mailboxID";
             }
             $stmt = oci_parse($conn, $query);
+            oci_bind_by_name($stmt, ":mailboxID", $mailboxID);
             
             if (!$stmt) {
                 $error_message = "Oracle Parse Error " . OCIError($conn)['message'];
@@ -243,8 +254,9 @@
 
         function get_attachment($email_id) {
             $conn = connect_to_oracle();
-            $query = "SELECT * FROM Attachment WHERE emailID = $email_id";
+            $query = "SELECT * FROM Attachment WHERE emailID = :email_id";
             $stmt = oci_parse($conn, $query);
+            oci_bind_by_name($stmt, ":email_id", $email_id);
 
             if (!$stmt) {
                 $error_message = "Oracle Parse Error " . OCIError($conn)['message'];
@@ -306,8 +318,9 @@
             $mailboxID = (int) $_SESSION['mailboxID'];
 
             $conn = connect_to_oracle();
-            $query = "SELECT COUNT(*) FROM Email WHERE mailboxID = $mailboxID";
+            $query = "SELECT COUNT(*) FROM Email WHERE mailboxID = :mailboxID";
             $stmt = oci_parse($conn, $query);
+            oci_bind_by_name($stmt, ":mailboxID", $mailboxID);
 
             if (!$stmt) {
                 $error_message = "Oracle Parse Error " . OCIError($conn)['message'];
