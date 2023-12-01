@@ -179,7 +179,7 @@
     
     
 
-    if (isset($_POST['view_average_contacts'])) {
+    if (isset($_POST['view_max_contacts'])) {
         $average_contacts_clicked = true;
 
         $query = "SELECT COUNT(*) AS contact_count
@@ -662,7 +662,7 @@
 
 <div class="container">
     <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-        <button type="submit" class="btn btn-primary" name="view_average_contacts">View Average Contacts Per User</button>
+        <button type="submit" class="btn btn-primary" name="view_max_contacts">View the Amount of the Most Contacts A User Has</button>
     </form>
 
     <?php
