@@ -104,35 +104,41 @@
 
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_contact_submit'])) {
         $secondContainer = "add";
-        $conn = connect_to_oracle();
-        $phone_number = $_SESSION["phoneNumber"];
-        $contact_id = rand(0, PHP_INT_MAX);  
-        $contact_email = $_POST["contact"];
 
-        $contacts = get_contacts($conn, $phone_number);
-
-        $exists = false; 
-
-        foreach ($contacts as $contact) {
-            if ($contact['CONTACTSEMAILADDRESS'] === $contact_email) {
-                $exists = true; 
-                break; 
-            }
-        } 
-
-        if (!$exists) {
-            $result = add_contact($conn, $phone_number, $contact_id, $contact_email);
-
-            if (!$result) {
-                $add_contact_error = "The email entered is already a contact, or an unknown error occured.";
+        if  ($_POST["contact"] != "") {
+            $conn = connect_to_oracle();
+            $phone_number = $_SESSION["phoneNumber"];
+            $contact_id = rand(0, PHP_INT_MAX);  
+            $contact_email = $_POST["contact"];
+    
+            $contacts = get_contacts($conn, $phone_number);
+    
+            $exists = false; 
+    
+            foreach ($contacts as $contact) {
+                if ($contact['CONTACTSEMAILADDRESS'] === $contact_email) {
+                    $exists = true; 
+                    break; 
+                }
+            } 
+    
+            if (!$exists) {
+                $result = add_contact($conn, $phone_number, $contact_id, $contact_email);
+    
+                if (!$result) {
+                    $add_contact_error = "The email entered is already a contact, or an unknown error occured.";
+                } else {
+                    $add_contact_success = "Contact has been added successfully";
+                }
             } else {
-                $add_contact_success = "Contact has been added successfully";
+                $add_contact_error = "The email entered is already a contact, or an unknown error occured.";
             }
-        } else {
-            $add_contact_error = "The email entered is already a contact, or an unknown error occured.";
+    
+            oci_close($conn);
+        } else  {
+            $null_input = true;
         }
-
-        oci_close($conn);
+        
     }
 
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_contacts'])) {    
@@ -218,6 +224,21 @@
         oci_close($conn);
     }
 
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['view_possible_contacts'])) {
+        $show_possible_contacts = true;
+        $secondContainer = "add";
+
+        $query = "SELECT emailAddress FROM Contact";
+
+        $conn = connect_to_oracle();
+        $contacts_stmt = oci_parse($conn, $query);
+        $all_contacts = oci_execute($contacts_stmt);
+
+        oci_close($conn);
+
+    }
+    
+
     function get_contacts($conn, $phone_number) {
         $query = "SELECT * FROM UserContacts WHERE usersPhoneNumber = :phone_number";
         $stmt = oci_parse($conn, $query);
@@ -255,6 +276,7 @@
     
         return $contacts;
     }
+    
 
     function add_contact($conn, $phone_number, $contact_id, $contact_email) {
         $query = "INSERT INTO UserContacts VALUES (:contact_id,:phone_number, :contact_email)";
@@ -599,18 +621,35 @@
             . "</div>";
     }
 
+    if ($null_input) {
+        echo "<div class='alert alert-danger' role='alert'>Please fill in the email field below.</div>";
+    }
+    
+
     echo '<form action="' . $_SERVER['PHP_SELF'] . '" method="post">
-            <div class="row">
-                <div class="col">
-                    <input type="contact" name="contact" class="form-control" id="contact" placeholder="Contact Email" required>
-                </div>
-                <div class="col">
-                    <input type="submit" name="add_contact_submit" class="btn btn-success" value="Add Contact">
-                </div>
-            </div>
-        </form>
+    <div class="row mb-3">
+        <div class="col">
+            <input type="contact" name="contact" class="form-control" id="contact" placeholder="Contact Email">
         </div>
-    </div>';
+        <div class="col">
+            <input type="submit" name="add_contact_submit" class="btn btn-success" value="Add Contact">
+            <input type="submit" name="view_possible_contacts" class="btn btn-success" value="View Possible Contacts to Add">
+        </div>
+        </div>
+    </form>';
+
+    if ($show_possible_contacts == true) {
+    echo '<div>'; 
+
+    while ($row = oci_fetch_assoc($contacts_stmt)) {
+        echo $row['EMAILADDRESS'] . "<br>";
+    }
+
+    echo '</div>'; 
+    }
+
+    echo '</div>';
+
     }
 
     if ($secondContainer == "delete") {
