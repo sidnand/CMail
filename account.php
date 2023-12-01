@@ -121,9 +121,9 @@
         } else {
             $deleted = delete_custom_mailbox($conn, $customLabel);
             if (!$deleted) {
-                $error_message_delete = "Error deleting the account.";
+                $error_message_delete = "Error deleting the mailbox.";
             } else {
-                $success_message_delete = "Success! Account has been deleted.";
+                $success_message_delete = "Success! Mailbox has been deleted.";
                 $mailboxes = get_mailboxes($conn);
             }
         }
@@ -208,6 +208,7 @@
         //echo $label;
 
         if($label == 'General') {
+            
             $query = "SELECT DISTINCT sender FROM Email
             WHERE mailboxID = :mailboxID";
 
@@ -215,6 +216,7 @@
             oci_bind_by_name($stmt, ":mailboxID", $_SESSION[$label]);
 
         } else {
+
             $query = "SELECT DISTINCT sender FROM CustomMailbox
             JOIN Email ON CustomMailbox.mailboxID = Email.mailboxID
             WHERE customLabel = :label";
