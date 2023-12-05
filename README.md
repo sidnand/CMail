@@ -4,7 +4,7 @@ CMail is an email service provider.
 
 ## Usage
 
-*Your need your own Oracle SQL server*
+*You need your own Oracle SQL server*
 
 1. Clone the repository
 2. In `base.php` file, set the `username`, `password` and `server url` to your Oracle SQl server.
